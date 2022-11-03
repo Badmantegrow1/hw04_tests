@@ -39,7 +39,7 @@ class PostPagesTests(TestCase):
         """Проверка коректности формы."""
         context = {
             reverse('posts:post_create'),
-            reverse('posts:post_edit', kwargs={'post_id': self.post.id, }),
+            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
         }
         for reverse_page in context:
             with self.subTest(reverse_page=reverse_page):
@@ -108,6 +108,10 @@ class PaginatorViewsTest(TestCase):
     def test_paginator_on_pages(self):
         """Проверка пагинации на страницах."""
         post_count = Post.objects.count()
+        if post_count % 10 == 0:
+            number_of_posts = 10
+        else:
+            number_of_posts = post_count % 10
         url_pages = [
             reverse('posts:index'),
             reverse('posts:group_list', kwargs={'slug': self.group.slug}),
@@ -121,5 +125,5 @@ class PaginatorViewsTest(TestCase):
                 )
                 self.assertEqual(len(self.unauthorized_client.get(
                     reverse_ + '?page=2').context.get('page_obj')),
-                    post_count % settings.NUMBER_OF_POSTS
+                    number_of_posts
                 )
