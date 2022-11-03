@@ -10,6 +10,7 @@ User = get_user_model()
 
 
 class PostViewsTests(TestCase):
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -38,6 +39,7 @@ class PostViewsTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def posts_check_all_fields(self, post):
+        """Метод, проверяющий поля поста."""
         with self.subTest(post=post):
             self.assertEqual(post.text, self.post.text)
             self.assertEqual(post.author, self.post.author)
@@ -56,10 +58,12 @@ class PostViewsTests(TestCase):
         правильным контекстом.
         """
         response = self.authorized_client.get(reverse('posts:post_create'))
+
         form_fields = {
             'group': forms.fields.ChoiceField,
             'text': forms.fields.CharField,
         }
+
         for value, expected in form_fields.items():
             with self.subTest(value=value):
                 form_field = response.context['form'].fields[value]
@@ -89,32 +93,85 @@ class PostViewsTests(TestCase):
         response = self.authorized_client.get(reverse('posts:index'))
         self.posts_check_all_fields(response.context['page_obj'][0])
 
+    def test_create_post_on_index_page(self):
+        """Появляется ли пост, при создании на главной странице."""
+        response = self.authorized_client.get(reverse('posts:index'))
+        last_post = response.context['page_obj'][0]
+        self.assertEqual(last_post, self.post)
+
     def test_groups_page_show_correct_context(self):
         """Шаблон group_list.html сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse(
                 'posts:group_list',
-                kwargs={'slug': self.group.slug})
+                kwargs={'slug': self.group.slug}
+            )
         )
         self.assertEqual(response.context['group'], self.group)
         self.posts_check_all_fields(response.context['page_obj'][0])
 
-    def test_profile_page_show_correct_context(self):
-        """Шаблон profile.html сформирован с правильным контекстом."""
+    def test_create_post_on_group_page(self):
+        """Появляется ли пост, при создании на странице его группы."""
+        response = self.authorized_client.get(
+            reverse(
+                'posts:group_list',
+                kwargs={'slug': self.group.slug},
+            )
+        )
+        test_post = str(response.context['page_obj'][0])
+        self.assertEqual(test_post, str(self.post))
+
+    def test_posts_context_profile_template(self):
+        """
+        Проверка, сформирован ли шаблон profile с
+        правильным контекстом.
+        """
         response = self.authorized_client.get(
             reverse(
                 'posts:profile',
-                kwargs={'username': self.user.username}))
-        self.assertEqual(response.context['user'], self.user)
-        self.posts_check_all_fields(response.context['page_obj'][0])
+                kwargs={'username': self.user.username},
+            )
+        )
+        profile = {'username': self.post.author}
 
-    def test_detail_page_show_correct_context(self):
-        """Шаблон post_detail.html сформирован с правильным контекстом."""
+        for value, expected in profile.items():
+            with self.subTest(value=value):
+                context = response.context[value]
+                self.assertEqual(context, expected)
+
+        self.posts_check_all_fields(response.context['page_obj'][0])
+        test_page = response.context['page_obj'][0]
+        self.assertEqual(test_page, self.post)
+
+    def test_posts_context_post_detail_template(self):
+        """
+        Проверка, сформирован ли шаблон post_detail с
+        правильным контекстом.
+        """
         response = self.authorized_client.get(
             reverse(
                 'posts:post_detail',
-                kwargs={'post_id': self.post.id}))
-        self.posts_check_all_fields(response.context['post'])
+                kwargs={'post_id': self.post.id},
+            )
+        )
+
+        profile = {'post': self.post}
+
+        for value, expected in profile.items():
+            with self.subTest(value=value):
+                context = response.context[value]
+                self.assertEqual(context, expected)
+
+    def test_posts_not_from_foreign_group(self):
+        """
+        Проверка, при указании группы поста, попадает
+        ли он в другую группу.
+        """
+        response = self.authorized_client.get(reverse('posts:index'))
+        self.posts_check_all_fields(response.context['page_obj'][0])
+        post = response.context['page_obj'][0]
+        group = post.group
+        self.assertEqual(group, self.group)
 
 
 class PaginatorViewsTest(TestCase):
@@ -141,10 +198,6 @@ class PaginatorViewsTest(TestCase):
     def test_paginator_on_pages(self):
         """Проверка пагинации на страницах."""
         post_count = Post.objects.count()
-        if post_count % 10 == 0:
-            number_of_posts = 10
-        else:
-            number_of_posts = post_count % 10
         url_pages = [
             reverse('posts:index'),
             reverse('posts:group_list', kwargs={'slug': self.group.slug}),
@@ -158,5 +211,5 @@ class PaginatorViewsTest(TestCase):
                 )
                 self.assertEqual(len(self.unauthorized_client.get(
                     reverse_ + '?page=2').context.get('page_obj')),
-                    number_of_posts
+                    post_count % settings.NUMBER_OF_POSTS
                 )

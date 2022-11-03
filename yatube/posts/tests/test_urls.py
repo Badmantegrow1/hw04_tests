@@ -10,6 +10,7 @@ User = get_user_model()
 
 
 class PostsUrlsTests(TestCase):
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
