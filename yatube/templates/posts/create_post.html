@@ -22,7 +22,7 @@
         </div>
         <div class="card-body">
          {% include 'includes/form_error.html' %}
-          <form method="post"
+          <form method="post" enctype="multipart/form-data"
             {% if PostForm %}
               action="{% url 'posts:post_edit' post.pk %}"
             {% endif %}

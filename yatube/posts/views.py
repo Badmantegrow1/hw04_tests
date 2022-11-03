@@ -1,19 +1,17 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import render, get_object_or_404, redirect
-from .forms import PostForm
-from .models import Post, Group
+from django.shortcuts import get_object_or_404, redirect, render
 
+from .forms import PostForm
+from .models import Group, Post
 
 User = get_user_model()
 
 
-NUMBER_OF_POSTS: int = 10
-
-
 def paginator(request, post_list):
-    p = Paginator(post_list, NUMBER_OF_POSTS)
+    p = Paginator(post_list, settings.NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = p.get_page(page_number)
     return page_obj
@@ -71,10 +69,13 @@ def post_edit(request, post_id):
     is_edit = True
     if post.author != request.user:
         return redirect('posts:post_detail', post.pk)
-    form = PostForm(request.POST or None, instance=post)
-    if request.method == "POST":
-        if form.is_valid():
-            form.save()
-        return redirect('posts:post_detail', post_id=post.pk)
-    return render(request, 'posts/create_post.html',
-                  {'form': form, 'is_edit': is_edit, 'post': post})
+    form = PostForm(request.POST or None, files=request.FILES or None,
+                    instance=post)
+    if form.is_valid():
+        form.save()
+        return redirect("posts:post_detail", post_id)
+    context = {
+        "form": form,
+        "is_edit": is_edit,
+    }
+    return render(request, "posts/create_post.html", context)

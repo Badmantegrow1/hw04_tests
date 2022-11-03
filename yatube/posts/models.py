@@ -3,7 +3,6 @@ from django.db import models
 
 
 class Group(models.Model):
-    objects = None
     title = models.CharField(verbose_name='Название', max_length=200)
     slug = models.SlugField(verbose_name='Слаг', unique=True)
     description = models.TextField(verbose_name='Описание', max_length=200)
@@ -17,7 +16,6 @@ class Group(models.Model):
 
 
 class Post(models.Model):
-    objects = None
     text = models.TextField(verbose_name='Текст поста',
                             help_text='Введите текст поста', max_length=3000)
     pub_date = models.DateTimeField(verbose_name='Дата публикации',
@@ -31,6 +29,7 @@ class Post(models.Model):
                                         'пост',
                               related_name="posts_group", blank=True,
                               null=True)
+    image = models.ImageField('Картинка', upload_to='posts/', blank=True)
 
     class Meta:
         ordering = ['-pub_date']
@@ -38,4 +37,23 @@ class Post(models.Model):
         verbose_name_plural = 'Посты'
 
     def __str__(self):
-        return self.text[:20]
+        return self.text[:15]
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE,
+                             related_name="comments")
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               related_name="comments")
+    text = models.TextField()
+    created = models.DateTimeField("date published", auto_now_add=True)
+
+    def __str__(self):
+        return self.text
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name="follower")
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               related_name="following")
