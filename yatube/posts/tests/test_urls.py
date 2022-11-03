@@ -19,7 +19,7 @@ class PostsUrlsTests(TestCase):
             slug='slug',
             description='Тестовое описание',
         )
-        cls.author = User.objects.create_user(username='Тестовый пользователь')
+        cls.author = User.objects.create_user(username='person')
         cls.no_author = User.objects.create_user(
             username='Не авторизованый пользователь'
         )
