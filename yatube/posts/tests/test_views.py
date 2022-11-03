@@ -97,13 +97,9 @@ class PaginatorViewsTest(TestCase):
             description='Тестовое описание группы',
         )
         posts = [
-                Post(
-                    text=f'Тестовый текст {post}',
-                    group=cls.group,
-                    author=cls.user,
-                )
-                for post in range(13)
-                ]
+            Post(text=f'Тестовый текст {post}', group=cls.group,
+                 author=cls.user,) for post in range(13)
+        ]
         Post.objects.bulk_create(posts)
 
     def setUp(self):
