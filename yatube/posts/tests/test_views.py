@@ -9,21 +9,29 @@ from ..models import Group, Post
 User = get_user_model()
 
 
-class PostPagesTests(TestCase):
+class PostViewsTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='person')
         cls.group = Group.objects.create(
-            title='Тестовая группа',
+            title='Тестовое название',
             slug='test-slug',
-            description='Тестовое описание группы',
+            description='Тестовое описание',
         )
         cls.post = Post.objects.create(
-            text='Тестовый текст поста',
+            text='Привет!',
             author=cls.user,
             group=cls.group,
         )
+        cls.templates_pages_names = {
+            'posts/index.html': reverse('posts:index'),
+            'posts/create_post.html': reverse('posts:post_create'),
+            'posts/group_list.html': reverse(
+                'posts:group_list',
+                kwargs={'slug': 'test-slug'},
+            )
+        }
 
     def setUp(self):
         self.authorized_client = Client()
@@ -35,21 +43,46 @@ class PostPagesTests(TestCase):
             self.assertEqual(post.author, self.post.author)
             self.assertEqual(post.group.id, self.post.group.id)
 
-    def test_forms_show_correct(self):
-        """Проверка коректности формы."""
-        context = {
-            reverse('posts:post_create'),
-            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
+    def test_posts_pages_use_correct_template(self):
+        """Проверка, использует ли адрес URL соответствующий шаблон."""
+        for template, reverse_name in self.templates_pages_names.items():
+            with self.subTest(reverse_name=reverse_name):
+                response = self.authorized_client.get(reverse_name)
+                self.assertTemplateUsed(response, template)
+
+    def test_posts_context_post_create_template(self):
+        """
+        Проверка, сформирован ли шаблон create_post с
+        правильным контекстом.
+        """
+        response = self.authorized_client.get(reverse('posts:post_create'))
+        form_fields = {
+            'group': forms.fields.ChoiceField,
+            'text': forms.fields.CharField,
         }
-        for reverse_page in context:
-            with self.subTest(reverse_page=reverse_page):
-                response = self.authorized_client.get(reverse_page)
-                self.assertIsInstance(
-                    response.context['form'].fields['text'],
-                    forms.fields.CharField)
-                self.assertIsInstance(
-                    response.context['form'].fields['group'],
-                    forms.fields.ChoiceField)
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context['form'].fields[value]
+                self.assertIsInstance(form_field, expected)
+
+    def test_posts_context_post_edit_template(self):
+        """
+        Проверка, сформирован ли шаблон post_edit с
+        правильным контекстом.
+        """
+        response = self.authorized_client.get(
+            reverse(
+                'posts:post_edit',
+                kwargs={'post_id': self.post.id},
+            )
+        )
+
+        form_fields = {'text': forms.fields.CharField}
+
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context.get('form').fields.get(value)
+                self.assertIsInstance(form_field, expected)
 
     def test_index_page_show_correct_context(self):
         """Шаблон index.html сформирован с правильным контекстом."""
