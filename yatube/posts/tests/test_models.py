@@ -47,7 +47,7 @@ class PostModelsTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='person')
+        cls.user = User.objects.create_user(username='Тестовый пользователь')
         cls.group = Group.objects.create(title='Тестовая группа')
         cls.post = Post.objects.create(
             text='Тестовый пост Тестов',
