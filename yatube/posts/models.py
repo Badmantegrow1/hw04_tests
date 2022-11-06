@@ -47,9 +47,8 @@ class Comment(models.Model):
                              related_name='comments', verbose_name='Пост')
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                related_name='comments', verbose_name='Автор')
-    text = models.TextField(verbose_name='Коментарий', help_text='Текст '
-                                                                 'нового '
-                                                                 'комментария')
+    text = models.TextField(verbose_name='Коментарий',
+                            help_text='Текст нового комментария')
     created = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
     updated = models.DateTimeField(auto_now=True, verbose_name='Обновлен')
     active = models.BooleanField(default=True, verbose_name='Активен')
