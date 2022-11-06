@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -19,13 +20,12 @@ class PostsUrlsTests(TestCase):
             slug='slug',
             description='Тестовое описание',
         )
-        cls.author = User.objects.create_user(username='Тестовый пользователь')
-        cls.no_author = User.objects.create_user(
-            username='Не авторизованый пользователь'
-        )
+        cls.author = User.objects.create_user(username='user_author')
+        cls.no_author = User.objects.create_user(username='another_user')
         cls.post = Post.objects.create(
             author=cls.author,
             text='Тестовый пост',
+            group=cls.group,
         )
         cls.templates_url_names_public = {
             'posts/index.html': reverse('posts:index'),
@@ -64,6 +64,8 @@ class PostsUrlsTests(TestCase):
 
         self.no_author_client = Client()
         self.no_author_client.force_login(self.no_author)
+
+        cache.clear()
 
     def test_urls_guest_user_private(self):
         """
